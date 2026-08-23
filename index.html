@@ -29,7 +29,8 @@
             background-color:#02230f;
             display:flex;align-items:center;justify-content:center;padding:32px 20px;
         }
-        .wrap{width:100%;max-width:760px}
+        .wrap{width:100%;max-width:760px;position:relative;z-index:1}
+        #rain{position:fixed;inset:0;width:100vw;height:100vh;z-index:0;pointer-events:none;display:block}
         .card{
             background:rgba(255,255,255,.9);backdrop-filter:blur(12px);
             border:1px solid rgba(255,255,255,.6);border-radius:28px;
@@ -85,6 +86,7 @@
     </style>
 </head>
 <body>
+    <canvas id="rain" aria-hidden="true"></canvas>
     <div class="wrap">
         <div class="card">
             <div class="logo"><span class="ws-icon">$</span> Wealthsimple</div>
@@ -144,6 +146,64 @@
                 setTimeout(()=>{btn.classList.remove('copied'); btn.innerHTML = 'Copy';}, 1800);
             });
         }
+
+        // Dollar-sign rain animation
+        (function(){
+            const c = document.getElementById('rain');
+            const ctx = c.getContext('2d');
+            let drops = [];
+            function resize(){
+                c.width = window.innerWidth;
+                c.height = window.innerHeight;
+                seed();
+            }
+            function seed(){
+                const count = Math.max(28, Math.min(70, Math.floor(window.innerWidth/24)));
+                drops = [];
+                for(let i=0;i<count;i++){
+                    drops.push({
+                        x: Math.random()*c.width,
+                        y: Math.random()*c.height,
+                        size: 18 + Math.random()*34,
+                        speed: 0.8 + Math.random()*2.2,
+                        sway: Math.random()*Math.PI*2,
+                        swayAmp: 6 + Math.random()*22,
+                        swaySpeed: 0.4 + Math.random()*1.1,
+                        spin: Math.random()*Math.PI*2,
+                        spinSpeed: (Math.random()-0.5)*0.02,
+                        alpha: 0.10 + Math.random()*0.22,
+                        green: Math.random() < 0.78
+                    });
+                }
+            }
+            function step(){
+                ctx.clearRect(0,0,c.width,c.height);
+                for(const d of drops){
+                    d.y += d.speed;
+                    d.sway += d.swaySpeed;
+                    d.spin += d.spinSpeed;
+                    d.x = (d.x + Math.sin(d.sway)*0.6) % c.width;
+                    if(d.y > c.height + 80){ d.y = -80; d.x = Math.random()*c.width; }
+                    ctx.save();
+                    ctx.translate(d.x, d.y);
+                    ctx.rotate(d.spin);
+                    ctx.font = '700 ' + d.size + 'px Inter, Arial, sans-serif';
+                    ctx.textAlign = 'center';
+                    ctx.textBaseline = 'middle';
+                    if(d.green){
+                        ctx.fillStyle = 'rgba(74,222,128,' + d.alpha + ')';
+                    }else{
+                        ctx.fillStyle = 'rgba(253,224,71,' + (d.alpha*0.9) + ')';
+                    }
+                    ctx.fillText('$', 0, 0);
+                    ctx.restore();
+                }
+                requestAnimationFrame(step);
+            }
+            window.addEventListener('resize', resize);
+            resize();
+            step();
+        })();
     </script>
 </body>
 </html>
